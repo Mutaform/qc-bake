@@ -1,0 +1,22 @@
+schema_version = "1.0.0"
+
+id = "qc_bake"
+version = "1.0.1"
+name = "QC Bake"
+tagline = "Rename high/low poly pairs for texture baking workflows"
+maintainer = "Mutaform Studio"
+type = "add-on"
+
+website = "https://mutaform.studio/"
+
+tags = ["Object", "Mesh", "Pipeline"]
+
+blender_version_min = "5.0.0"
+
+license = [
+    "SPDX:GPL-2.0-or-later",
+]
+
+copyright = [
+    "2026 Mutaform Studio",
+]
