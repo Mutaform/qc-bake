@@ -48,3 +48,5 @@ ICON_OVERWRITE = 'ERROR'
 ICON_UTIL_ORGANIZE = 'OUTLINER_COLLECTION'   # collection-layout section
 ICON_UTIL_FLAT = 'MENU_PANEL'                # flat High/Low layout
 ICON_UTIL_PERASSET = 'PACKAGE'               # per-asset Bake_<name> layout
+ICON_UTIL_REDUCE = 'MOD_BUILD'               # reduce bake groups by distance
+ICON_UTIL_RESTORE = 'LOOP_BACK'              # undo the last reduce pass

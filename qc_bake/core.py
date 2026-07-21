@@ -101,3 +101,94 @@ def strip_known_suffixes(name, suffixes):
         if suf and name.endswith(suf):
             return name[: -len(suf)]
     return name
+
+
+# -----------------------------------------------------------------------------
+# Bake-group quality tags (Outliner collection colors)
+# -----------------------------------------------------------------------------
+# A per-asset "Bake_<name>" collection is only bakeable when it contains both a
+# low and a high member. We surface that health check as a collection color_tag
+# so problems are visible at a glance in the Outliner.
+#
+#   GREEN  (COLOR_04) - both _low and _high present: ready to bake.
+#   RED    (COLOR_01) - only _low OR only _high: something is missing, look here.
+BAKEGROUP_TAG_OK = 'COLOR_04'    # green
+BAKEGROUP_TAG_WARN = 'COLOR_01'  # red
+
+
+def classify_role(name, low_suf, high_suf, cage_suf):
+    """Return 'LOW', 'HIGH', 'CAGE' or None for a name, by suffix.
+
+    Mirrors the participation rule used when organizing: a suffix matches
+    either at the end of the name or as an embedded "<suffix>_" marker, which
+    covers indexed members like ``asset_high_01``.
+    """
+    if cage_suf and (name.endswith(cage_suf) or ("%s_" % cage_suf) in name):
+        return 'CAGE'
+    if high_suf and (name.endswith(high_suf) or ("%s_" % high_suf) in name):
+        return 'HIGH'
+    if low_suf and (name.endswith(low_suf) or ("%s_" % low_suf) in name):
+        return 'LOW'
+    return None
+
+
+def bakegroup_color_tag(object_names, low_suf, high_suf, cage_suf):
+    """Return the color_tag a per-asset bake collection should carry.
+
+    Green when both a low and a high member are present (a complete namepair,
+    ready to bake); red otherwise (only lows or only highs - a member is
+    missing and the group needs attention). Cage-only members do not by
+    themselves make a group complete.
+    """
+    has_low = has_high = False
+    for name in object_names:
+        role = classify_role(name, low_suf, high_suf, cage_suf)
+        if role == 'LOW':
+            has_low = True
+        elif role == 'HIGH':
+            has_high = True
+    return BAKEGROUP_TAG_OK if (has_low and has_high) else BAKEGROUP_TAG_WARN
+
+
+# -----------------------------------------------------------------------------
+# Reduce Bake Groups - reversible rename backup
+# -----------------------------------------------------------------------------
+# "Reduce Bake Groups" merges small namepairs into fewer groups by renaming
+# objects (and optionally their mesh data). That's destructive unless the
+# pre-rename names are kept somewhere. We stash them as custom properties on
+# the objects themselves rather than in a separate list, because:
+#   - it survives file save/reload and outlasts Blender's native undo stack;
+#   - it needs no id-by-name bookkeeping that renaming would immediately break;
+#   - it is automatically consistent even if objects are later deleted.
+# A "Restore Bake Groups" operator reads these back and clears them.
+REDUCE_PREV_NAME_KEY = "qcbake_reduce_prev_name"
+REDUCE_PREV_DATA_NAME_KEY = "qcbake_reduce_prev_data_name"
+
+
+# -----------------------------------------------------------------------------
+# Add-on version (read from blender_manifest.toml at runtime)
+# -----------------------------------------------------------------------------
+def addon_version():
+    """Return the running add-on's (major, minor, patch) version tuple.
+
+    Reads it from the installed extension's manifest via addon_utils, so the
+    UI never drifts out of sync with blender_manifest.toml - there is only
+    ever one place the version number is written down.
+    """
+    import sys
+    import addon_utils
+
+    # This module's __name__ is "<addon_root_package>.core"; the add-on's own
+    # package is one level up regardless of which repository it's installed
+    # under (bl_ext.user_default.qc_bake, bl_ext.some_repo.qc_bake, ...).
+    root_pkg = __name__.rsplit(".", 1)[0]
+    mod = sys.modules.get(root_pkg)
+    info = addon_utils.module_bl_info(mod) if mod else None
+    if not info:
+        return (0, 0, 0)
+    return tuple(info.get("version", (0, 0, 0)))
+
+
+def addon_version_string():
+    """Return the running add-on's version as 'X.Y.Z'."""
+    return ".".join(str(part) for part in addon_version())

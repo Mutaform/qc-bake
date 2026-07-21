@@ -30,6 +30,12 @@ class QCBAKE_PT_main(Panel):
     bl_category = TAB_CATEGORY
     bl_label = PANEL_TITLE
 
+    def draw_header_preset(self, context):
+        # Right-aligned "ver X.Y.Z" tag on the panel's title row. Sourced live
+        # from blender_manifest.toml via core.addon_version_string(), so it
+        # can never fall out of sync with the actual installed version.
+        self.layout.label(text="ver %s" % core.addon_version_string())
+
     def draw(self, context):
         layout = self.layout
 

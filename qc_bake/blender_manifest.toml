@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "qc_bake"
-version = "1.0.1"
+version = "2.0.0"
 name = "QC Bake"
 tagline = "Rename high/low poly pairs for texture baking workflows"
 maintainer = "Mutaform Studio"

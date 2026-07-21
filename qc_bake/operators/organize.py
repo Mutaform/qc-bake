@@ -30,14 +30,7 @@ FLAT_SUBS = ("High", "Low", "Cage")
 
 def _classify(obj, low_suf, high_suf, cage_suf):
     """Return 'LOW', 'HIGH', 'CAGE' or None for an object, by name suffix."""
-    name = obj.name
-    if cage_suf and (name.endswith(cage_suf) or ("%s_" % cage_suf) in name):
-        return 'CAGE'
-    if name.endswith(high_suf) or ("%s_" % high_suf) in name:
-        return 'HIGH'
-    if name.endswith(low_suf) or ("%s_" % low_suf) in name:
-        return 'LOW'
-    return None
+    return core.classify_role(obj.name, low_suf, high_suf, cage_suf)
 
 
 def _base_name(obj, low_suf, high_suf, cage_suf):
@@ -81,6 +74,39 @@ def _cleanup_bake_collections(keep):
         is_managed = coll.name.startswith(managed_prefixes) or coll.name in managed_exact
         if is_managed and len(coll.objects) == 0 and len(coll.children) == 0:
             bpy.data.collections.remove(coll)
+
+
+def _collapse_outliner():
+    """Fold every Outliner tree back closed after (re)building the hierarchy.
+
+    Blender doesn't expose a per-collection "expanded" property through bpy,
+    so this leans on the same trick the Outliner's own collapse-all keymap
+    uses: bpy.ops.outliner.show_one_level(open=False), run against a real
+    Outliner area/region via a context override. Every newly created or
+    relinked collection starts out expanded, which turns into a wall of
+    nested rows to fold by hand after each run - this does it once,
+    automatically. Silently does nothing if no Outliner is visible (e.g. a
+    background/headless context), since that's a convenience, not something
+    the operator should ever fail over.
+    """
+    try:
+        for win in bpy.context.window_manager.windows:
+            for area in win.screen.areas:
+                if area.type != 'OUTLINER':
+                    continue
+                region = next((r for r in area.regions if r.type == 'WINDOW'), None)
+                if region is None:
+                    continue
+                with bpy.context.temp_override(window=win, area=area, region=region):
+                    # A couple of passes is enough to fully close both levels
+                    # of nesting our layouts ever produce (head -> role/asset
+                    # sub-collections), with headroom to spare.
+                    for _ in range(3):
+                        bpy.ops.outliner.show_one_level(open=False)
+                area.tag_redraw()
+    except RuntimeError:
+        # No Outliner area/region available to override onto - nothing to do.
+        pass
 
 
 class QCBAKE_OT_organize(Operator):
@@ -127,6 +153,7 @@ class QCBAKE_OT_organize(Operator):
             self._build_per_asset(head, buckets, low_suf, high_suf, cage_suf, keep)
 
         _cleanup_bake_collections(keep)
+        _collapse_outliner()
 
         self.report({'INFO'}, "Organized %d objects into '%s' (%s)."
                     % (total, HEAD_NAME, self.layout_mode.replace('_', ' ').title()))
@@ -151,6 +178,9 @@ class QCBAKE_OT_organize(Operator):
                     bpy.context.scene.collection.children.unlink(sub)
                 head.children.link(sub)
             keep.add(sub)
+            # Flat role collections carry no per-asset health meaning; make
+            # sure a stale tag from a previous Per-Asset run doesn't linger.
+            sub.color_tag = 'NONE'
             for obj in objs:
                 _unlink_everywhere(obj)
                 sub.objects.link(obj)
@@ -179,3 +209,8 @@ class QCBAKE_OT_organize(Operator):
             for obj in objs:
                 _unlink_everywhere(obj)
                 sub.objects.link(obj)
+
+            # Health check: green when the group holds a complete low/high
+            # namepair, red when a member is missing (only lows or only highs).
+            sub.color_tag = core.bakegroup_color_tag(
+                [o.name for o in objs], low_suf, high_suf, cage_suf)

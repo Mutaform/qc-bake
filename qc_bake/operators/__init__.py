@@ -13,6 +13,7 @@ import bpy
 
 from .create import QCBAKE_OT_create_namepair
 from .organize import QCBAKE_OT_organize
+from .reduce import QCBAKE_OT_reduce_groups, QCBAKE_OT_restore_reduce_groups
 from .swap import QCBAKE_OT_swap
 from .visibility import QCBAKE_OT_toggle_visibility
 
@@ -20,6 +21,8 @@ classes = (
     QCBAKE_OT_create_namepair,
     QCBAKE_OT_swap,
     QCBAKE_OT_toggle_visibility,
+    QCBAKE_OT_reduce_groups,
+    QCBAKE_OT_restore_reduce_groups,
     QCBAKE_OT_organize,
 )
 

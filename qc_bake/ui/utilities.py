@@ -37,6 +37,25 @@ class QCBAKE_PT_utilities(Panel):
 
     def draw(self, context):
         layout = self.layout
+        settings = context.scene.qc_bake
+
+        layout.label(text="Group Reduction")
+        reduce_box = layout.column(align=True)
+        reduce_box.prop(settings, "reduce_group_prefix", text="Prefix")
+        reduce_box.prop(settings, "reduce_min_gap", text="Minimum Gap")
+
+        row = layout.row(align=True)
+        row.scale_y = 1.25
+        row.operator("qcbake.reduce_groups",
+                     text="Reduce Bake Groups",
+                     icon=icons.ICON_UTIL_REDUCE)
+        restore_sub = row.row(align=True)
+        restore_sub.enabled = bool(
+            bpy.ops.qcbake.restore_reduce_groups.poll())
+        restore_sub.operator("qcbake.restore_reduce_groups",
+                             text="", icon=icons.ICON_UTIL_RESTORE)
+
+        layout.separator()
 
         layout.label(text="Collection Layout")
         col = layout.column(align=True)

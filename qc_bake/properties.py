@@ -10,7 +10,7 @@
 # QC Bake - properties
 
 import bpy
-from bpy.props import BoolProperty, EnumProperty, StringProperty
+from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
 from bpy.types import PropertyGroup
 
 from . import core
@@ -55,6 +55,22 @@ class QCBakeSettings(PropertyGroup):
     overwrite_names: BoolProperty(
         name="Allow Name Collisions", default=False,
         description="Let Blender auto-suffix (.001) instead of aborting on clashes",
+    )
+    reduce_group_prefix: StringProperty(
+        name="Group Prefix",
+        default="BakeGroup",
+        description="Base name used when reducing existing bake pairs into fewer groups",
+    )
+    reduce_min_gap: FloatProperty(
+        name="Minimum Gap",
+        default=0.05,
+        min=0.0,
+        soft_max=10.0,
+        unit='LENGTH',
+        description=(
+            "Minimum world-space distance required between asset bounds before "
+            "they can share one bake group"
+        ),
     )
 
 
