@@ -35,18 +35,7 @@ def _classify(obj, low_suf, high_suf, cage_suf):
 
 def _base_name(obj, low_suf, high_suf, cage_suf):
     """Recover the shared base name of a namepair member."""
-    name = obj.name
-    # Strip a trailing "_NN" index on multi-high objects first.
-    for suf in (high_suf, low_suf, cage_suf):
-        if not suf:
-            continue
-        # e.g. FMN204_high_01 -> cut at the suffix
-        marker = suf + "_"
-        if marker in name:
-            return name[: name.index(marker)]
-        if name.endswith(suf):
-            return name[: -len(suf)]
-    return name
+    return core.base_name(obj.name, low_suf, high_suf, cage_suf)
 
 
 def _collect_participants(low_suf, high_suf, cage_suf):

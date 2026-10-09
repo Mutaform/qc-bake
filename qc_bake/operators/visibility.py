@@ -54,14 +54,11 @@ class QCBAKE_OT_toggle_visibility(Operator):
             self.report({'WARNING'}, "No suffix defined for this group.")
             return {'CANCELLED'}
 
-        # Group-suffixed multi-high objects end with e.g. "_high_01".
+        # Case-insensitive; indexed multi-high members ("_high_01") count too.
         hide = self.action == 'HIDE'
         for obj in bpy.data.objects:
             name = obj.name
-            match = any(
-                name.endswith(s) or ("%s_" % s) in name
-                for s in suffixes
-            )
+            match = any(core.has_suffix(name, s) for s in suffixes)
             if match:
                 obj.hide_set(hide)
         return {'FINISHED'}

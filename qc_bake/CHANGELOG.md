@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.1
+
+### Fixed
+- **Suffix matching is now case-insensitive.** Scenes named `_High` / `_Low`
+  (or `_HIGH` / `_LOW`) were invisible to *Flat*, *Per Asset*, *Reduce Bake
+  Groups*, the visibility toggles and *Swap* because the presets only matched
+  the exact lowercase `_high` / `_low`. All role detection now goes through a
+  single `core.match_suffix` helper that ignores case.
+- **Indexed members are matched strictly.** The multi-high form (`_high_01`)
+  now requires the suffix to be followed by `_` plus digits, so an unrelated
+  name fragment can no longer be mistaken for a role marker.
+
+### Added
+- **HP / LP naming preset** (`_lp` / `_hp`, with `_LP` / `_HP` matching too).
+
 ## 2.0.0
 
 Major update - accumulated a batch of workflow fixes since 1.1.0, most

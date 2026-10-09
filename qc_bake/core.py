@@ -26,6 +26,7 @@ NAMING_PRESETS = {
     'SUBSTANCE': ("_low", "_high", "_cage"),
     'MARMOSET': ("_low", "_high", "_cage"),
     'XNORMAL': ("_lo", "_hi", "_cage"),
+    'HPLP': ("_lp", "_hp", "_cage"),
     'CUSTOM': (None, None, None),  # resolved from user-provided strings
 }
 
@@ -36,6 +37,8 @@ PRESET_ITEMS = [
      "Suffixes used by Marmoset Toolbag"),
     ('XNORMAL', "xNormal ( _lo / _hi )",
      "Short suffixes used by xNormal"),
+    ('HPLP', "HP / LP ( _lp / _hp )",
+     "Short high-poly / low-poly suffixes (_LP / _HP also match)"),
     ('CUSTOM', "Custom",
      "Define your own suffixes below"),
 ]
@@ -95,12 +98,56 @@ def metric_for(criterion, metrics):
     return tris
 
 
+def match_suffix(name, suf):
+    """Return the base part of ``name`` if it carries ``suf``, else None.
+
+    Matching is case-insensitive, so a preset of ``_high`` also picks up
+    objects named ``Asset_High`` or ``Asset_HIGH`` - production scenes come
+    from several tools and artists, and the capitalisation of the role suffix
+    is the one thing nobody keeps consistent. Two placements are accepted:
+
+      * trailing:  ``Asset_high``            -> ``Asset``
+      * indexed:   ``Asset_high_01``         -> ``Asset`` (multi-high members)
+
+    The indexed form requires the suffix to be followed by ``_`` and digits
+    only, so an unrelated substring like ``Plywood`` can never be mistaken
+    for a ``_low`` marker.
+    """
+    if not suf:
+        return None
+    lname, lsuf = name.lower(), suf.lower()
+    if lname.endswith(lsuf):
+        return name[: len(name) - len(suf)]
+    marker = lsuf + "_"
+    idx = lname.rfind(marker)
+    while idx != -1:
+        if name[idx + len(marker):].isdigit():
+            return name[:idx]
+        idx = lname.rfind(marker, 0, idx)
+    return None
+
+
+def has_suffix(name, suf):
+    """True when ``name`` carries ``suf`` (see match_suffix)."""
+    return match_suffix(name, suf) is not None
+
+
 def strip_known_suffixes(name, suffixes):
-    """Remove any one trailing suffix from the list, if present."""
+    """Remove any one suffix from the list, if present (case-insensitive)."""
     for suf in suffixes:
-        if suf and name.endswith(suf):
-            return name[: -len(suf)]
+        base = match_suffix(name, suf)
+        if base is not None:
+            return base
     return name
+
+
+def base_name(name, low_suf, high_suf, cage_suf):
+    """Recover the shared base name of a namepair member.
+
+    Cage is checked first, then high, then low, mirroring classify_role, so
+    ``Asset_high_01`` and ``Asset_low`` both resolve to ``Asset``.
+    """
+    return strip_known_suffixes(name, (cage_suf, high_suf, low_suf))
 
 
 # -----------------------------------------------------------------------------
@@ -119,15 +166,14 @@ BAKEGROUP_TAG_WARN = 'COLOR_01'  # red
 def classify_role(name, low_suf, high_suf, cage_suf):
     """Return 'LOW', 'HIGH', 'CAGE' or None for a name, by suffix.
 
-    Mirrors the participation rule used when organizing: a suffix matches
-    either at the end of the name or as an embedded "<suffix>_" marker, which
-    covers indexed members like ``asset_high_01``.
+    Case-insensitive; a suffix matches either at the end of the name or as an
+    indexed ``<suffix>_NN`` member like ``asset_high_01`` (see match_suffix).
     """
-    if cage_suf and (name.endswith(cage_suf) or ("%s_" % cage_suf) in name):
+    if has_suffix(name, cage_suf):
         return 'CAGE'
-    if high_suf and (name.endswith(high_suf) or ("%s_" % high_suf) in name):
+    if has_suffix(name, high_suf):
         return 'HIGH'
-    if low_suf and (name.endswith(low_suf) or ("%s_" % low_suf) in name):
+    if has_suffix(name, low_suf):
         return 'LOW'
     return None
 

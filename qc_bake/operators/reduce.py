@@ -19,27 +19,11 @@ from .. import core
 
 
 def _classify(obj, low_suf, high_suf, cage_suf):
-    name = obj.name
-    if cage_suf and (name.endswith(cage_suf) or ("%s_" % cage_suf) in name):
-        return 'CAGE'
-    if name.endswith(high_suf) or ("%s_" % high_suf) in name:
-        return 'HIGH'
-    if name.endswith(low_suf) or ("%s_" % low_suf) in name:
-        return 'LOW'
-    return None
+    return core.classify_role(obj.name, low_suf, high_suf, cage_suf)
 
 
 def _base_name(obj, low_suf, high_suf, cage_suf):
-    name = obj.name
-    for suf in (high_suf, low_suf, cage_suf):
-        if not suf:
-            continue
-        marker = suf + "_"
-        if marker in name:
-            return name[: name.index(marker)]
-        if name.endswith(suf):
-            return name[: -len(suf)]
-    return name
+    return core.base_name(obj.name, low_suf, high_suf, cage_suf)
 
 
 def _asset_bounds(asset, depsgraph):

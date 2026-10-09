@@ -52,7 +52,7 @@ class QCBAKE_OT_create_namepair(Operator):
         candidates = list(selected)
         if settings.detect_cage and cage_suf:
             for o in list(candidates):
-                if o.name.endswith(cage_suf):
+                if core.has_suffix(o.name, cage_suf):
                     cage_obj = o
                     candidates.remove(o)
                     break

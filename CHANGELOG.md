@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1
+
+- Suffix matching is case-insensitive (`_High` / `_Low` scenes now work).
+- Added HP / LP naming preset.
+
 ## 1.0.1
 
 - Packaged as a Blender Extension.

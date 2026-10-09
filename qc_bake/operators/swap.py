@@ -29,8 +29,8 @@ class QCBAKE_OT_swap(Operator):
         low_suf, high_suf, _ = core.get_suffixes(settings)
 
         objs = context.selected_objects
-        lows = [o for o in objs if o.name.endswith(low_suf)]
-        highs = [o for o in objs if o.name.endswith(high_suf)]
+        lows = [o for o in objs if core.has_suffix(o.name, low_suf)]
+        highs = [o for o in objs if core.has_suffix(o.name, high_suf)]
 
         if len(lows) != 1 or len(highs) != 1:
             self.report(
@@ -40,8 +40,8 @@ class QCBAKE_OT_swap(Operator):
             return {'CANCELLED'}
 
         low, high = lows[0], highs[0]
-        low_base = low.name[: -len(low_suf)]
-        high_base = high.name[: -len(high_suf)]
+        low_base = core.match_suffix(low.name, low_suf)
+        high_base = core.match_suffix(high.name, high_suf)
 
         # Swap the ROLES of the two objects: the object currently named
         # <base>_low becomes <base>_high and vice versa. Both are parked on
