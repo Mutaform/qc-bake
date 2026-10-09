@@ -26,34 +26,30 @@ class QCBAKE_OT_swap(Operator):
 
     def execute(self, context):
         settings = context.scene.qc_bake
-        low_suf, high_suf, _ = core.get_suffixes(settings)
-
         objs = context.selected_objects
-        lows = [o for o in objs if core.has_suffix(o.name, low_suf)]
-        highs = [o for o in objs if core.has_suffix(o.name, high_suf)]
+        roles = {o.name: core.classify_role(o.name, settings) for o in objs}
+        lows = [o for o in objs if roles[o.name] == 'LOW']
+        highs = [o for o in objs if roles[o.name] == 'HIGH']
 
         if len(lows) != 1 or len(highs) != 1:
             self.report(
                 {'ERROR'},
-                "Select exactly one '%s' and one '%s' object." % (low_suf, high_suf),
+                "Select exactly one low and one high object (by name marker).",
             )
             return {'CANCELLED'}
 
         low, high = lows[0], highs[0]
-        low_base = core.match_suffix(low.name, low_suf)
-        high_base = core.match_suffix(high.name, high_suf)
 
-        # Swap the ROLES of the two objects: the object currently named
-        # <base>_low becomes <base>_high and vice versa. Both are parked on
-        # temporary names first so neither target name is momentarily occupied
-        # (important because a namepair usually shares the same base name).
-        tmp_low = "__qcbake_tmp_low__" + core.id_generator()
-        tmp_high = "__qcbake_tmp_high__" + core.id_generator()
-        low.name = tmp_low
-        high.name = tmp_high
+        # Swap the ROLES of the two objects by exchanging their names outright,
+        # so whatever naming style the pair uses (_low/_high, _LP/_HP,
+        # high_<name>, <name>High ...) is preserved exactly. Both are parked on
+        # temporary names first so neither target name is momentarily occupied.
+        low_name, high_name = low.name, high.name
+        low.name = "__qcbake_tmp_low__" + core.id_generator()
+        high.name = "__qcbake_tmp_high__" + core.id_generator()
 
-        low.name = low_base + high_suf   # old low object -> now high
-        high.name = high_base + low_suf  # old high object -> now low
+        low.name = high_name   # old low object -> now high
+        high.name = low_name   # old high object -> now low
 
         if settings.also_rename_datablock:
             if low.data:

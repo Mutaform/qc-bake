@@ -20,7 +20,7 @@ class QCBakeSettings(PropertyGroup):
     naming_preset: EnumProperty(
         name="Naming Convention",
         items=core.PRESET_ITEMS,
-        default='SUBSTANCE',
+        default='AUTO',
     )
     custom_low_suffix: StringProperty(name="Low Suffix", default="_low")
     custom_high_suffix: StringProperty(name="High Suffix", default="_high")

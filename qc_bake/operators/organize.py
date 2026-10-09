@@ -15,8 +15,8 @@
 #   FLAT       Bake Group -> High / Low / Cage        (grouped by role)
 #   PER_ASSET  Bake Group -> Bake_<base> / ...        (grouped by namepair)
 #
-# Participation is decided purely by name suffixes, so props and helper meshes
-# are never touched. Each operator can rebuild from any prior state.
+# Participation is decided purely by the role marker in the object name
+# (see core.detect_role), so props and helper meshes are never touched. Each operator can rebuild from any prior state.
 
 import bpy
 from bpy.props import EnumProperty
@@ -28,21 +28,11 @@ HEAD_NAME = "Bake Group"
 FLAT_SUBS = ("High", "Low", "Cage")
 
 
-def _classify(obj, low_suf, high_suf, cage_suf):
-    """Return 'LOW', 'HIGH', 'CAGE' or None for an object, by name suffix."""
-    return core.classify_role(obj.name, low_suf, high_suf, cage_suf)
-
-
-def _base_name(obj, low_suf, high_suf, cage_suf):
-    """Recover the shared base name of a namepair member."""
-    return core.base_name(obj.name, low_suf, high_suf, cage_suf)
-
-
-def _collect_participants(low_suf, high_suf, cage_suf):
+def _collect_participants(settings):
     """Return dict role -> [objects] for everything that looks like bake geo."""
     buckets = {'LOW': [], 'HIGH': [], 'CAGE': []}
     for obj in bpy.data.objects:
-        role = _classify(obj, low_suf, high_suf, cage_suf)
+        role = core.classify_role(obj.name, settings)
         if role:
             buckets[role].append(obj)
     return buckets
@@ -116,14 +106,13 @@ class QCBAKE_OT_organize(Operator):
 
     def execute(self, context):
         settings = context.scene.qc_bake
-        low_suf, high_suf, cage_suf = core.get_suffixes(settings)
 
-        buckets = _collect_participants(low_suf, high_suf, cage_suf)
+        buckets = _collect_participants(settings)
         total = sum(len(v) for v in buckets.values())
         if total == 0:
             self.report({'WARNING'},
-                        "No named bake objects found (nothing with %s / %s)."
-                        % (low_suf, high_suf))
+                        "No named bake objects found (no low / high / cage "
+                        "marker in any object name).")
             return {'CANCELLED'}
 
         scene_coll = context.scene.collection
@@ -139,7 +128,7 @@ class QCBAKE_OT_organize(Operator):
         if self.layout_mode == 'FLAT':
             self._build_flat(head, buckets, keep)
         else:
-            self._build_per_asset(head, buckets, low_suf, high_suf, cage_suf, keep)
+            self._build_per_asset(head, buckets, settings, keep)
 
         _cleanup_bake_collections(keep)
         _collapse_outliner()
@@ -174,12 +163,12 @@ class QCBAKE_OT_organize(Operator):
                 _unlink_everywhere(obj)
                 sub.objects.link(obj)
 
-    def _build_per_asset(self, head, buckets, low_suf, high_suf, cage_suf, keep):
+    def _build_per_asset(self, head, buckets, settings, keep):
         # Group every participant by its recovered base name.
         by_base = {}
         for role, objs in buckets.items():
             for obj in objs:
-                base = _base_name(obj, low_suf, high_suf, cage_suf)
+                base = core.base_name(obj.name, settings)
                 by_base.setdefault(base, []).append(obj)
 
         for base, objs in by_base.items():
@@ -202,4 +191,4 @@ class QCBAKE_OT_organize(Operator):
             # Health check: green when the group holds a complete low/high
             # namepair, red when a member is missing (only lows or only highs).
             sub.color_tag = core.bakegroup_color_tag(
-                [o.name for o in objs], low_suf, high_suf, cage_suf)
+                [o.name for o in objs], settings)

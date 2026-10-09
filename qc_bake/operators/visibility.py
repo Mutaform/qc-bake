@@ -39,26 +39,14 @@ class QCBAKE_OT_toggle_visibility(Operator):
 
     def execute(self, context):
         settings = context.scene.qc_bake
-        low_suf, high_suf, cage_suf = core.get_suffixes(settings)
-
-        if self.group == 'HIGH':
-            suffixes = (high_suf,)
-        elif self.group == 'LOW':
-            suffixes = (low_suf,)
-        elif self.group == 'CAGE':
-            suffixes = (cage_suf,) if cage_suf else ()
-        else:
-            suffixes = tuple(s for s in (low_suf, high_suf, cage_suf) if s)
-
-        if not suffixes:
-            self.report({'WARNING'}, "No suffix defined for this group.")
+        if self.group == 'CAGE' and not any(core.role_tokens(settings)['CAGE']):
+            self.report({'WARNING'}, "No cage suffix defined.")
             return {'CANCELLED'}
 
-        # Case-insensitive; indexed multi-high members ("_high_01") count too.
+        # Role detection is shared with the rest of the add-on (core.detect_role):
+        # any case, suffix / prefix / CamelCase, indexed multi-high members.
         hide = self.action == 'HIDE'
         for obj in bpy.data.objects:
-            name = obj.name
-            match = any(core.has_suffix(name, s) for s in suffixes)
-            if match:
+            if core.has_role(obj.name, settings, self.group):
                 obj.hide_set(hide)
         return {'FINISHED'}

@@ -43,16 +43,13 @@ class QCBAKE_OT_create_namepair(Operator):
             return {'CANCELLED'}
 
         crit = settings.hilo_criterion
-        all_suffixes = [low_suf, high_suf]
-        if cage_suf:
-            all_suffixes.append(cage_suf)
 
         # Identify the cage object (if any) before we sort hi/lo.
         cage_obj = None
         candidates = list(selected)
         if settings.detect_cage and cage_suf:
             for o in list(candidates):
-                if core.has_suffix(o.name, cage_suf):
+                if core.classify_role(o.name, settings) == 'CAGE':
                     cage_obj = o
                     candidates.remove(o)
                     break
@@ -90,7 +87,7 @@ class QCBAKE_OT_create_namepair(Operator):
         if settings.generate_random_name:
             base = core.id_generator()
         else:
-            base = core.strip_known_suffixes(low_ref.name, all_suffixes)
+            base = core.base_name(low_ref.name, settings)
 
         # Collision check.
         wanted = [base + low_suf]

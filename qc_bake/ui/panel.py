@@ -146,24 +146,10 @@ class QCBAKE_PT_visibility(Panel):
         col.separator()
         self._toggle_row(col, context, settings, 'ALL', "All", icons.ICON_ALL)
 
-    def _group_suffixes(self, settings, group):
-        low_suf, high_suf, cage_suf = core.get_suffixes(settings)
-        if group == 'HIGH':
-            return (high_suf,)
-        if group == 'LOW':
-            return (low_suf,)
-        if group == 'CAGE':
-            return (cage_suf,) if cage_suf else ()
-        return tuple(s for s in (low_suf, high_suf, cage_suf) if s)
-
     def _group_state(self, settings, group):
         """Return 'SHOWN', 'HIDDEN', 'MIXED' or None (no matching objects)."""
-        suffixes = self._group_suffixes(settings, group)
-        if not suffixes:
-            return None
         objs = [o for o in bpy.data.objects
-                if any(o.name.endswith(s) or ("%s_" % s) in o.name
-                       for s in suffixes)]
+                if core.has_role(o.name, settings, group)]
         if not objs:
             return None
         hidden = sum(1 for o in objs if o.hide_get())

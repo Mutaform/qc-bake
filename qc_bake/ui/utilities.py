@@ -72,7 +72,7 @@ class QCBAKE_PT_utilities(Panel):
         info = layout.column(align=True)
         info.scale_y = 0.85
         info.label(text="Head: 'Bake Group'", icon='INFO')
-        info.label(text="Picked by name suffix only")
+        info.label(text="Picked by low / high / cage marker in the name")
 
 
 classes = (

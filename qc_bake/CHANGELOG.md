@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.1.0
+
+### Added
+- **Auto naming preset** (new default for new scenes). Role detection now
+  understands any common convention at once: `_low/_high`, `_lo/_hi`,
+  `_lp/_hp`, `_lowpoly/_highpoly`, `_hires`, `_cage` - in any case, as a
+  suffix (`Chair_High`), an indexed suffix (`Chair_high_01`, Blender's
+  `Chair_high.001`), a prefix (`high_Chair`, `HP_Chair`) or glued CamelCase
+  (`ChairHigh`, `ChairHP`). Separators `_`, `.`, `-` and space all count.
+  The other presets keep recognising only their own family, but with the
+  same case / placement tolerance. New names are still written with the
+  preset's suffixes (Auto writes `_low` / `_high`).
+
+### Fixed
+- **Visibility buttons stayed greyed out** on `_High` / `_Low` scenes: the
+  panel kept its own case-sensitive name check. Every name check in the
+  add-on (panel, visibility, Flat / Per Asset, Reduce, Swap, Create) now
+  goes through one shared detector in `core`.
+- **Swap High / Low** exchanges the two objects' names outright, so the
+  pair keeps its own naming style instead of being rewritten to the preset.
+- Preset enum values are pinned, so files saved with an older version keep
+  their chosen convention after the list was reordered.
+
 ## 2.0.1
 
 ### Fixed

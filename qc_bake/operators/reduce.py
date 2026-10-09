@@ -18,14 +18,6 @@ from bpy.types import Operator
 from .. import core
 
 
-def _classify(obj, low_suf, high_suf, cage_suf):
-    return core.classify_role(obj.name, low_suf, high_suf, cage_suf)
-
-
-def _base_name(obj, low_suf, high_suf, cage_suf):
-    return core.base_name(obj.name, low_suf, high_suf, cage_suf)
-
-
 def _asset_bounds(asset, depsgraph):
     mins = Vector((math.inf, math.inf, math.inf))
     maxs = Vector((-math.inf, -math.inf, -math.inf))
@@ -92,7 +84,7 @@ class QCBAKE_OT_reduce_groups(Operator):
             self.report({'ERROR'}, "Low/high suffixes must not be empty.")
             return {'CANCELLED'}
 
-        assets, skipped = self._collect_assets(low_suf, high_suf, cage_suf, depsgraph)
+        assets, skipped = self._collect_assets(settings, depsgraph)
         if len(assets) < 2:
             self.report({'WARNING'}, "Need at least two complete bake namepairs.")
             return {'CANCELLED'}
@@ -132,15 +124,14 @@ class QCBAKE_OT_reduce_groups(Operator):
         )
         return {'FINISHED'}
 
-    def _collect_assets(self, low_suf, high_suf, cage_suf, depsgraph):
+    def _collect_assets(self, settings, depsgraph):
         by_base = {}
         for obj in bpy.data.objects:
             if obj.type != 'MESH':
                 continue
-            role = _classify(obj, low_suf, high_suf, cage_suf)
+            role, base = core.detect_role(obj.name, settings)
             if role is None:
                 continue
-            base = _base_name(obj, low_suf, high_suf, cage_suf)
             asset = by_base.setdefault(
                 base,
                 {"base": base, "LOW": [], "HIGH": [], "CAGE": [], "objects": []},
